@@ -1,0 +1,17 @@
+name = "campground-blacklist"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+# --- Optional: store the blacklist in Workers KV -----------------------------
+# So clients only ever send bookings, not the ban list. Create the namespace,
+# paste the returned id below, then uncomment. Both stay free on the free tier.
+#
+#   npx wrangler kv namespace create BLACKLIST
+#
+# [[kv_namespaces]]
+# binding = "BLACKLIST"
+# id = "PASTE_NAMESPACE_ID_HERE"
+
+# --- Optional: protect the PUT /blacklist endpoint with a token --------------
+#   npx wrangler secret put ADMIN_TOKEN
+# (Set as a secret, not here in plaintext.)
