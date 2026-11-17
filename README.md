@@ -79,7 +79,7 @@ So clients only ever upload bookings, keep the ban list in Workers KV (free):
 ```bash
 npx wrangler kv namespace create BLACKLIST
 # paste the returned id into wrangler.toml, uncomment the [[kv_namespaces]] block
-npx wrangler secret put ADMIN_TOKEN        # optional, protects the upload
+npx wrangler secret put ADMIN_TOKEN        # required: uploads are refused until it is set
 
 # upload the current blacklist:
 curl -X PUT https://your-worker.workers.dev/blacklist \

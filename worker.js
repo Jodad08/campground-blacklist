@@ -75,16 +75,31 @@ async function handleStoreBlacklist(request, env) {
   if (!env.BLACKLIST) {
     return json({ error: "No KV namespace bound (BLACKLIST)." }, 501);
   }
-  if (env.ADMIN_TOKEN) {
-    const auth = request.headers.get("authorization") || "";
-    if (auth !== `Bearer ${env.ADMIN_TOKEN}`) {
-      return json({ error: "Unauthorized." }, 401);
-    }
+  // Fail closed: without ADMIN_TOKEN set, nobody can overwrite the stored blacklist.
+  if (!env.ADMIN_TOKEN) {
+    return json({ error: "Uploads disabled: set the ADMIN_TOKEN secret first." }, 503);
+  }
+  const auth = request.headers.get("authorization") || "";
+  if (!(await tokenMatches(auth, `Bearer ${env.ADMIN_TOKEN}`))) {
+    return json({ error: "Unauthorized." }, 401);
   }
   const csv = await request.text();
   if (!csv.trim()) return json({ error: "Empty body." }, 400);
   await env.BLACKLIST.put("current", csv);
   return json({ ok: true, stored: csv.length });
+}
+
+// Constant-time comparison: hash both sides so lengths match, then compare every byte.
+async function tokenMatches(given, expected) {
+  const enc = new TextEncoder();
+  const [a, b] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(given)),
+    crypto.subtle.digest("SHA-256", enc.encode(expected)),
+  ]);
+  const x = new Uint8Array(a), y = new Uint8Array(b);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
 }
 
 function json(obj, status = 200) {
